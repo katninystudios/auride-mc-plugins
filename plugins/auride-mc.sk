@@ -1,0 +1,4 @@
+command /auridemc <text>:
+    trigger:
+        if arg-1 is "version":
+            send "Server version: §aauride-mc-1.1.0_stable (Updates: 1)"

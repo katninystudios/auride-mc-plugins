@@ -2,6 +2,8 @@
 This is the repo for the Auride Minecraft plugins. Currently, we have:
 - Gravestone
     - A gravestone system to help enhance the player experience. Upon death, a chest will be created with the users inventory (inventory, armor slots, and off-hand) which no one else will be able to open.
+- Auride MC
+    - Reports simple info about the Auride MC server.
 
 These plugins are built to unintrusive, but help the player experience and create the experience we want for them.
 
