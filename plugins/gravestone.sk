@@ -140,16 +140,13 @@ every 5 seconds:
     loop all players:
         if loop-player is not in lava:
             if block below loop-player is solid:
-                broadcast "saving last safe spot in 'every 5 seconds'..."
                 set {lastsafe::%loop-player%} to location of loop-player
 
 on damage:
     victim is a player
 
     if damage was caused by lava, fire or burning:
-        broadcast "burning! don't save!"
         stop
     
     if block below victim is solid:
-        broadcast "saving last safe spot in 'on damage'..."
         set {lastsafe::%victim%} to location of victim
