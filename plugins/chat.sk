@@ -1,0 +1,21 @@
+on chat:
+    cancel event
+
+    if {pronouns::%uuid of player%} is not set:
+        broadcast "<%player%> %message%"
+    else:
+        broadcast "<%player% (§2%{pronouns::%uuid of player%}%§f)> %message%"
+
+command /pronouns <text>:
+    trigger:
+        if length of arg-1 > 15:
+            send "§cToo long! The max character limit is 15 characters. If you're trying to remove your pronouns, use §a/pronouns clear"
+            stop
+
+        if arg-1 is "clear":
+            delete {pronouns::%uuid of player%}
+            send "§aYour pronouns were cleared!"
+            stop
+        
+        set {pronouns::%uuid of player%} to arg-1
+        send "§aPronouns set to §2%arg-1% §2successfully!"
