@@ -1,0 +1,155 @@
+on death:
+    if victim is a player:
+        # there are bugs related to items dropping (specifically when burning to death),
+        # so temp keep inventory then clear everything
+        keep inventory
+        clear drops
+
+        # get the location, add one, and create a chest
+        if damage was caused by void or lava:
+            set {_loc} to {lastsafe::%victim%}
+        else:
+            set {_loc} to location of victim
+        add 1 to y-coordinate of {_loc}
+
+        set block at {_loc} to chest
+
+        set {_loc} to location of block at {_loc}
+
+        set {_id} to "%world of {_loc}%:%x-coordinate of {_loc}%:%y-coordinate of {_loc}%:%z-coordinate of {_loc}%"
+
+        # save the location
+        set {gravestones::%{_id}%} to {_loc}
+
+        # save the owner
+        # use the uuid, not username, usernames can be changed/manipulated
+        set {graveowners::%{_id}%} to uuid of victim
+
+        # get the dimension and pretty up the name
+        set {_world} to world of {_loc}
+        if {_world} is "world":
+            set {_dimension} to "Overworld"
+        else if {_world} is "world_nether":
+            set {_dimension} to "Nether"
+        else if {_world} is "world_the_end":
+            set {_dimension} to "End"
+        else:
+            set {_dimension} to {_world}
+
+        # let the player know where their gravestone is
+        set {_x} to rounded x-coordinate of {_loc}
+        set {_y} to rounded y-coordinate of {_loc}
+        set {_z} to rounded z-coordinate of {_loc}
+        send "Your §4gravestone §fhas been created at §a%{_x}%, %{_y}%, %{_z}% in the %{_dimension}%" to victim
+        if damage was caused by void or lava:
+            send "Your §4gravestone §ewas unable to be placed at your death location." to victim
+            send "We placed it at your §alast known safe location." to victim
+
+        # save inventory
+        loop 36 times:
+            set {_item} to slot loop-number - 1 of victim's inventory
+
+            if {_item} is not air:
+                add {_item} to {graveitems::%{_id}%::inventory::*}
+
+        # save offhand
+        if offhand item of victim is not air:
+            set {graveitems::%{_id}%::offhand} to offhand item of victim
+
+        # save armor
+        if helmet of victim is not air:
+            set {graveitems::%{_id}%::armor::helmet} to helmet of victim
+        if chestplate of victim is not air:
+            set {graveitems::%{_id}%::armor::chestplate} to chestplate of victim
+        if leggings of victim is not air:
+            set {graveitems::%{_id}%::armor::leggings} to leggings of victim
+        if boots of victim is not air:
+            set {graveitems::%{_id}%::armor::boots} to boots of victim
+
+        clear victim's inventory
+        set offhand item of victim to air
+
+# now, when the chest is clicked, we want to open a virtual one rather than
+# the regular chest, just to make sure we can save all their items!
+on right click:
+    set {_id} to "%world of clicked block%:%x-coordinate of clicked block%:%y-coordinate of clicked block%:%z-coordinate of clicked block%"
+
+    if {gravestones::%{_id}%} is set:
+        cancel event
+        
+        if uuid of player is not {graveowners::%{_id}%}:
+            send "&cThis grave does not belong to you!" to player
+            stop
+        
+        # for normal inventory items, just put it in their inventory however
+        loop {graveitems::%{_id}%::inventory::*}:
+            give loop-value to player
+
+        # but for armor and offhand, put it on them
+        if {graveitems::%{_id}%::armor::helmet} is set:
+            if helmet of player is air:
+                set helmet of player to {graveitems::%{_id}%::armor::helmet}
+            else:
+                drop {graveitems::%{_id}%::armor::helmet} at player
+
+        if {graveitems::%{_id}%::armor::chestplate} is set:
+            if chestplate of player is air:
+                set chestplate of player to {graveitems::%{_id}%::armor::chestplate}
+            else:
+                drop {graveitems::%{_id}%::armor::chestplate} at player
+
+        if {graveitems::%{_id}%::armor::leggings} is set:
+            if leggings of player is air:
+                set leggings of player to {graveitems::%{_id}%::armor::leggings}
+            else:
+                drop {graveitems::%{_id}%::armor::leggings} at player
+
+        if {graveitems::%{_id}%::armor::boots} is set:
+            if boots of player is air:
+                set boots of player to {graveitems::%{_id}%::armor::boots}
+            else:
+                drop {graveitems::%{_id}%::armor::boots} at player
+
+        if {graveitems::%{_id}%::offhand} is set:
+            if player's offhand item is air:
+                set player's offhand item to {graveitems::%{_id}%::offhand}
+            else:
+                drop {graveitems::%{_id}%::offhand} at player
+        
+        send "&aYou recovered your items!" to player
+
+        set block at {gravestones::%{_id}%} to air
+
+        delete {gravestones::%{_id}%}
+        delete {graveowners::%{_id}%}
+        delete {graveitems::%{_id}%::inventory::*}
+
+# prevent breaking if you arent the player
+on break:
+    if event-block is chest:
+        set {_id} to "%world of event-block%:%x-coordinate of event-block%:%y-coordinate of event-block%:%z-coordinate of event-block%"
+
+        if {gravestones::%{_id}%} is set:
+            if uuid of player is not {graveowners::%{_id}%}:
+                cancel event
+                send "&cYou cannot break someone else's gravestone!" to player
+
+# to prevent impossible situations, such as not being able to recover your items when you
+# die to the void, track a "last safe" location
+every 5 seconds:
+    loop all players:
+        if loop-player is not in lava:
+            if block below loop-player is solid:
+                broadcast "saving last safe spot in 'every 5 seconds'..."
+                set {lastsafe::%loop-player%} to location of loop-player
+
+on damage:
+    victim is a player
+
+    if damage was caused by lava, fire or burning:
+        broadcast "burning! don't save!"
+        stop
+    
+    if block below victim is solid:
+        broadcast "saving last safe spot in 'on damage'..."
+        set {lastsafe::%victim%} to location of victim
